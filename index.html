@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Today's Schedule - Daily Planner</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>Today's Schedule</h1>
+                <div class="header-buttons">
+                    <a href="full-schedule.html" class="nav-button">Full Schedule</a>
+                    <button id="planButton" class="plan-button">
+                        <span class="button-icon">🎯</span>
+                        Plan My Day
+                    </button>
+                </div>
+            </div>
+            <div class="date-display" id="currentDate"></div>
+        </header>
+        
+        <main>
+            <div class="schedule-container">
+                <div class="timeline">
+                    <!-- Timeline will be populated by JavaScript -->
+                </div>
+                <div class="schedule-items" id="scheduleItems">
+                    <!-- Schedule items will be populated by JavaScript -->
+                </div>
+            </div>
+        </main>
+
+        <div id="chatModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>AI Assistant</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="chat-container">
+                    <div id="chatMessages" class="chat-messages"></div>
+                    <div class="chat-input-container">
+                        <input type="text" id="userInput" placeholder="Type your message...">
+                        <button id="sendButton">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
