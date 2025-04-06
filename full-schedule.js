@@ -1,3 +1,6 @@
+// Import configuration
+import config from './config.js';
+
 // DOM Elements
 const scheduleContainer = document.getElementById('scheduleContainer');
 const planButton = document.getElementById('planButton');
@@ -8,7 +11,7 @@ const sendButton = document.getElementById('sendButton');
 const closeButton = document.querySelector('.close');
 
 // OpenAI Configuration
-const OPENAI_API_KEY = ''; // Add your API key here
+const OPENAI_API_KEY = config.OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 // Initialize the app
