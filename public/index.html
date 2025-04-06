@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accountable - Today's Schedule</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="logo">Accountable</div>
+        <nav class="nav-links">
+            <a href="index.html">Today</a>
+            <a href="full-schedule.html">Full Schedule</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="timeline">
+            <div class="time-column"></div>
+            <div class="schedule-items"></div>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">AI Assistant</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="Ask me to plan your day...">
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

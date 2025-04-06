@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accountable - Full Schedule</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="logo">Accountable</div>
+        <nav class="nav-links">
+            <a href="index.html">Today</a>
+            <a href="full-schedule.html">Full Schedule</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="calendar-header">
+            <button id="prevMonth" class="nav-month">←</button>
+            <h2 id="currentMonth"></h2>
+            <button id="nextMonth" class="nav-month">→</button>
+        </div>
+        <div class="calendar-grid">
+            <div class="day-header">Sun</div>
+            <div class="day-header">Mon</div>
+            <div class="day-header">Tue</div>
+            <div class="day-header">Wed</div>
+            <div class="day-header">Thu</div>
+            <div class="day-header">Fri</div>
+            <div class="day-header">Sat</div>
+            <!-- Calendar days will be added here by JavaScript -->
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">AI Assistant</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="Ask me to plan your day...">
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script type="module" src="full-schedule.js"></script>
+</body>
+</html> 
