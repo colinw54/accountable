@@ -42,17 +42,6 @@ function initializeCalendar() {
 
 // Setup event listeners
 function setupEventListeners() {
-    if (planButton) planButton.addEventListener('click', openChatModal);
-    if (closeButton) closeButton.addEventListener('click', closeChatModal);
-    if (sendButton) sendButton.addEventListener('click', handleUserMessage);
-    if (userInput) {
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleUserMessage();
-            }
-        });
-    }
-    
     if (prevMonthButton) {
         prevMonthButton.addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
@@ -68,6 +57,15 @@ function setupEventListeners() {
             renderCalendar();
         });
     }
+
+    if (sendButton && userInput) {
+        sendButton.addEventListener('click', handleSendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSendMessage();
+            }
+        });
+    }
 }
 
 // Update month display
@@ -81,7 +79,7 @@ function updateMonthDisplay() {
 function renderCalendar() {
     if (!calendarGrid) return;
     
-    // Clear existing calendar
+    // Clear existing calendar (except headers)
     while (calendarGrid.children.length > 7) {
         calendarGrid.removeChild(calendarGrid.lastChild);
     }
@@ -157,6 +155,46 @@ function addEventToCalendar(event) {
     }
 }
 
+// Handle send message
+function handleSendMessage() {
+    const message = userInput.value.trim();
+    if (message) {
+        addMessageToChat('user', message);
+        userInput.value = '';
+        handleUserMessage(message);
+    }
+}
+
+// Handle user message
+async function handleUserMessage(message) {
+    try {
+        // For testing, create a sample event
+        const sampleEvent = {
+            date: new Date().toISOString().split('T')[0],
+            time: '14:30',
+            title: 'Test Event',
+            importance: 'medium'
+        };
+        addEventToCalendar(sampleEvent);
+        
+        addMessageToChat('assistant', 'I\'ve added a test event to your schedule.');
+    } catch (error) {
+        console.error('Error:', error);
+        addMessageToChat('assistant', 'Sorry, I encountered an error. Please try again.');
+    }
+}
+
+// Add message to chat
+function addMessageToChat(sender, message) {
+    if (!chatMessages) return;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    messageDiv.textContent = message;
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
 // Modal functions
 function openChatModal() {
     if (!chatModal) return;
@@ -186,31 +224,6 @@ function addUserMessage(message) {
     messageElement.textContent = message;
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-async function handleUserMessage() {
-    if (!userInput) return;
-    const message = userInput.value.trim();
-    if (message) {
-        addUserMessage(message);
-        userInput.value = '';
-        
-        try {
-            // For testing, create a sample event
-            const sampleEvent = {
-                date: new Date().toISOString().split('T')[0],
-                time: '14:30',
-                title: 'Test Event',
-                importance: 'medium'
-            };
-            addEventToCalendar(sampleEvent);
-            
-            addBotMessage('I\'ve added a test event to your schedule.');
-        } catch (error) {
-            console.error('Error:', error);
-            addBotMessage('Sorry, I encountered an error. Please try again.');
-        }
-    }
 }
 
 // Close modal when clicking outside

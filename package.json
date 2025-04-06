@@ -1,7 +1,8 @@
 {
   "name": "accountable",
   "version": "1.0.0",
-  "description": "A daily planner application with AI assistance",
+  "type": "module",
+  "description": "A scheduling application with AI assistance",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -22,7 +23,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "openai": "^4.91.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
