@@ -4,18 +4,30 @@ import cors from 'cors';
 import OpenAI from 'openai';
 import mongoose from 'mongoose';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 8000;
 
-// Connect to MongoDB
-try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log(`MongoDB Connected: ${mongoose.connection.host}`);
-} catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
-}
+// Improved MongoDB connection with retry logic
+const connectDB = async () => {
+    try {
+        const conn = await mongoose.connect(process.env.MONGODB_URI, {
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+        console.log(`MongoDB Connected: ${conn.connection.host}`);
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        // Don't exit the process, let it retry
+        setTimeout(connectDB, 5000);
+    }
+};
+
+connectDB();
 
 // Activity Schema
 const activitySchema = new mongoose.Schema({
@@ -53,16 +65,22 @@ const Activity = mongoose.model('Activity', activitySchema);
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve index.html for all routes except /api
+app.get('*', (req, res, next) => {
+    if (!req.path.startsWith('/api')) {
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    } else {
+        next();
+    }
+});
 
 // Initialize OpenAI
 const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
-});
-
-// Serve index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Get all activities

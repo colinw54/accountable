@@ -331,7 +331,7 @@ async function handleUserMessage(message) {
         addMessageToScheduler(message, true);
         
         console.log('Sending request to server...');
-        const response = await fetch('http://localhost:8000/api/openai', {
+        const response = await fetch('/api/openai', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -359,8 +359,8 @@ async function handleUserMessage(message) {
 
         // Add AI response to scheduler chat
         addMessageToScheduler('I\'ve added these activities to your schedule!');
-        } catch (error) {
-            console.error('Error:', error);
+    } catch (error) {
+        console.error('Error:', error);
         addMessageToScheduler(`Sorry, I couldn't process your request: ${error.message}`);
     }
 }
@@ -442,18 +442,18 @@ async function checkForReminders() {
                 
                 console.log(promptGenerator(eventName));
                 // Get AI-generated acknowledgment message
-                const response = await fetch('http://localhost:8000/api/ackl', {
-        method: 'POST',
-        headers: {
+                const response = await fetch('/api/ackl', {
+                    method: 'POST',
+                    headers: {
                         'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+                    },
+                    body: JSON.stringify({
                         message: promptGenerator(eventName)
                     }),
                     signal: AbortSignal.timeout(10000) // 10 second timeout
-    });
+                });
 
-    if (!response.ok) {
+                if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
