@@ -176,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCurrentDate();
     generateTimeSlots();
     loadActivities();
-    addMessageToScheduler('How can I help you plan your day?');
-    addMessageToNotifications('I\'ll notify you when your events are starting! 🔔');
+    addMessageToScheduler('What do you want to do today?');
+    addMessageToNotifications('I\'ll notify you when your events are starting, and ask for your acknowledgment! 🔔');
     setupEventListeners();
     setupModalListeners();
     setupTabListeners();
