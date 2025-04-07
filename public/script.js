@@ -176,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCurrentDate();
     generateTimeSlots();
     loadActivities();
-    addMessageToScheduler('What do you want to do today?');
-    addMessageToNotifications('I\'ll notify you when your events are starting, and ask for your acknowledgment! 🔔');
+    addMessageToScheduler('What do you want to do today? For example, you can say "I want to go workout at the gym at 7:00am for one hour".');
+    addMessageToNotifications('I\'ll notify you when your events are starting, and ask for your acknowledgment! To test it out, try scheduling something that occurs in the next minute, and wait for the notification!🔔');
     setupEventListeners();
     setupModalListeners();
     setupTabListeners();
