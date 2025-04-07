@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import OpenAI from 'openai';
 import mongoose from 'mongoose';
+import path from 'path';
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -59,6 +60,11 @@ const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
+// Serve index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Get all activities
 app.get('/api/activities', async (req, res) => {
     try {
@@ -109,18 +115,28 @@ app.post('/api/openai', async (req, res) => {
         console.log('Making OpenAI API call...');
         try {
             const completion = await client.chat.completions.create({
-                model: "gpt-3.5-turbo",
+                model: "gpt-4",
                 messages: [
                     {
                         role: "system",
-                        content: `You are a helpful AI accountability partner that helps users plan their day. 
-                        When the user provides what they are going to do for the day, extract activities, a brief description and their times.
-                        Process and eturn each activity in the format of a tuple: (activity name, start time, end time, description).
-                        If user specifies evening/pm/etc, make sure to reeturn in 24 hour format. 
-                        Example response format:
-                        (Class, 12:00, 14:00, Math class in room 101)
-                        (Work, 15:00, 16:00, Team meeting)
-                        Only return the tuples, one per line, no additional text.`
+                        content: `You are a helpful AI accountability partner that helps users plan their day. When the user provides a description of their day's plan, extract each activity along with its name, start time, end time, and a brief description.
+
+Format each activity as a tuple:
+(activity name, start time, end time, description)
+
+- Times should be in 24-hour format.
+- If the user specifies "evening", "PM", or similar, apply a +12 hour offset to convert to 24-hour format.
+- If the time isn't precise (e.g., "early morning"), do your best to reasonably estimate.
+- Return one tuple per line.
+- Only return the tuples — no introductory text, no explanations.
+
+**Example Input:**
+I have a math class from noon to 2pm, then a team meeting at 3pm for one hour.
+
+**Example Output:**
+(Class, 12:00, 14:00, Math class)  
+(Work, 15:00, 16:00, Team meeting)
+`
 
                         
                     },
@@ -161,6 +177,60 @@ app.post('/api/openai', async (req, res) => {
             console.log('Saved activities:', savedActivities);
 
             res.json({ activities: savedActivities });
+        } catch (apiError) {
+            console.error('OpenAI API Error:', apiError);
+            res.status(500).json({ 
+                error: 'OpenAI API Error',
+                details: apiError.message
+            });
+        }
+    } catch (error) {
+        console.error('Server Error:', error);
+        res.status(500).json({ 
+            error: 'Server Error',
+            details: error.message
+        });
+    }
+});
+
+// Acknowledgment message generation endpoint
+app.post('/api/ackl', async (req, res) => {
+    try {
+        const { message } = req.body;
+        console.log('Received message:', message);
+        
+        if (!process.env.OPENAI_API_KEY) {
+            console.error('OpenAI API key is not set');
+            return res.status(500).json({ 
+                error: 'Server configuration error',
+                details: 'OpenAI API key is not set'
+            });
+        }
+
+        console.log('Making OpenAI API call...');
+        try {
+            const completion = await client.chat.completions.create({
+                model: "gpt-4",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an AI assistant that generates acknowledgment messages based on different themes. For depressing theme, be melancholic but determined. For motivational theme, be enthusiastic and energetic. For disciplined theme, be focused and professional. Generate a concise, one-sentence acknowledgment message that matches the requested theme."
+                    },
+                    {
+                        role: "user",
+                        content: message
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 150
+            });
+
+            console.log('OpenAI API call successful');
+            const responseText = completion.choices[0].message.content.trim();
+            console.log('OpenAI response:', responseText);
+
+            // Return the generated string
+            res.json({ response: responseText });
         } catch (apiError) {
             console.error('OpenAI API Error:', apiError);
             res.status(500).json({ 

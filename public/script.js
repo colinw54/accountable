@@ -37,11 +37,60 @@ let pendingAcknowledgments = new Map();
 
 let pendingNotifications = 0;
 
+// Theme-specific prompts for acknowledgments
+const themePrompts = {
+    depressing: (eventName) => `Generate a melancholic but determined acknowledgment message for the event "${eventName}". The message should reflect a sense of duty and resignation, but with a hint of perseverance.`,
+    motivational: (eventName) => `Generate an enthusiastic and energetic acknowledgment message for the event "${eventName}". The message should be highly motivational, inspiring, and filled with positive energy.`,
+    disciplined: (eventName) => `Generate a focused and professional acknowledgment message for the event "${eventName}". The message should reflect commitment, precision, and a structured approach.`
+};
+
+// Get current theme
+function getCurrentTheme() {
+    return localStorage.getItem('preferred-theme') || 'disciplined';
+}
+
+// Theme switching functionality
+function initializeThemes() {
+    const themeOptions = document.querySelectorAll('.theme-option');
+    let currentTheme = localStorage.getItem('preferred-theme') || 'disciplined';
+
+    // Function to apply theme
+    function applyTheme(theme) {
+        // Remove active class from all options
+        themeOptions.forEach(option => {
+            option.classList.remove('active');
+            if (option.getAttribute('data-theme') === theme) {
+                option.classList.add('active');
+            }
+        });
+        
+        // Set theme attribute on root element
+        document.documentElement.setAttribute('data-theme', theme);
+        document.body.setAttribute('data-theme', theme);
+        
+        // Save theme preference
+        localStorage.setItem('preferred-theme', theme);
+        currentTheme = theme;
+    }
+
+    // Set up theme option listeners
+    themeOptions.forEach(option => {
+        option.addEventListener('click', (e) => {
+            e.preventDefault();
+            const theme = option.getAttribute('data-theme');
+            applyTheme(theme);
+        });
+    });
+
+    // Apply initial theme
+    applyTheme(currentTheme);
+}
+
 // Initialize the app
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing...');
     updateCurrentDate();
-    initializeTimeline();
+    generateTimeSlots();
     loadActivities();
     addMessageToScheduler('How can I help you plan your day?');
     addMessageToNotifications('I\'ll notify you when your events are starting! 🔔');
@@ -52,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         voiceChatBtn.addEventListener('click', toggleVoiceChat);
     }
     startReminderChecks();
+    initializeThemes();
 });
 
 // Update current date display
@@ -62,31 +112,78 @@ function updateCurrentDate() {
     currentDateElement.textContent = now.toLocaleDateString('en-US', options);
 }
 
-// Initialize timeline
-function initializeTimeline() {
+// Function to generate time slots
+function generateTimeSlots() {
     const timeColumn = document.querySelector('.time-column');
     const scheduleItems = document.querySelector('.schedule-items');
     
-    if (!timeColumn || !scheduleItems) {
-        console.error('Required timeline elements not found');
-        return;
-    }
-
-    // Clear existing content
+    // Clear existing slots
     timeColumn.innerHTML = '';
     scheduleItems.innerHTML = '';
     
-    // Create time slots from 6 AM to 12 AM (midnight)
-    for (let i = 6; i < 24; i++) {
+    // Generate time slots from 00:00 to 23:00
+    for (let hour = 0; hour < 24; hour++) {
+        const displayHour = hour.toString().padStart(2, '0');
         const timeSlot = document.createElement('div');
         timeSlot.className = 'time-slot';
-        timeSlot.textContent = `${i.toString().padStart(2, '0')}:00`;
+        timeSlot.textContent = `${displayHour}:00`;
         timeColumn.appendChild(timeSlot);
+        
+        const eventSlot = document.createElement('div');
+        eventSlot.className = 'event-slot';
+        scheduleItems.appendChild(eventSlot);
+    }
+}
+
+// Function to position an event on the timeline
+function positionEventOnTimeline(eventElement, startTime, duration) {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const startMinutesSinceMidnight = hours * 60 + minutes;
+    const durationMinutes = duration;
+
+    eventElement.style.position = 'absolute';
+    eventElement.style.top = `${(startMinutesSinceMidnight / 60) * 60}px`;
+    eventElement.style.height = `${(durationMinutes / 60) * 60}px`;
+    eventElement.style.width = 'calc(100% - 12px)';
+    eventElement.style.left = '6px';
+}
+
+// Update the addEventToTimeline function
+function addEventToTimeline(eventData) {
+    const scheduleItems = document.querySelector('.schedule-items');
+    const eventElement = document.createElement('div');
+    eventElement.className = `event-block ${eventData.type || 'default'}`;
+    
+    const eventContent = `
+        <strong>${eventData.name}</strong>
+        <small>${eventData.startTime} - ${eventData.endTime}</small>
+    `;
+    eventElement.innerHTML = eventContent;
+
+    // Calculate duration in minutes
+    const [startHour, startMinute] = eventData.startTime.split(':').map(Number);
+    const [endHour, endMinute] = eventData.endTime.split(':').map(Number);
+    
+    // Handle events that cross midnight
+    let durationMinutes;
+    if (endHour < startHour || (endHour === startHour && endMinute < startMinute)) {
+        // Event crosses midnight
+        durationMinutes = ((endHour + 24 - startHour) * 60) + (endMinute - startMinute);
+    } else {
+        durationMinutes = ((endHour - startHour) * 60) + (endMinute - startMinute);
     }
 
-    // Set up the schedule container
-    scheduleItems.style.position = 'relative';
-    scheduleItems.style.height = '1080px'; // 18 hours * 60px
+    // Store the event data in the element's dataset
+    eventElement.dataset.startTime = eventData.startTime;
+    eventElement.dataset.name = eventData.name;
+
+    positionEventOnTimeline(eventElement, eventData.startTime, durationMinutes);
+    scheduleItems.appendChild(eventElement);
+
+    // Add click event listener for the event block
+    eventElement.addEventListener('click', () => {
+        showEventDetails(eventData);
+    });
 }
 
 // Setup modal event listeners
@@ -177,57 +274,6 @@ function showEventDetails(event) {
         }
 
         modal.style.display = 'block';
-    }
-}
-
-// Add event to timeline
-function addEventToTimeline(event) {
-    const { name, startTime, endTime, description } = event;
-    
-    // Parse start and end times
-    const [startHour, startMinute] = startTime.split(':').map(Number);
-    const [endHour, endMinute] = endTime.split(':').map(Number);
-    
-    // Calculate positions (1px per minute), offset by 6 hours (360 minutes)
-    const startPosition = (startHour * 60 + startMinute) - 360;
-    const endPosition = (endHour * 60 + endMinute) - 360;
-    const duration = endPosition - startPosition;
-    
-    // Skip events that end before 6 AM or start after midnight
-    if (endPosition < 0 || startPosition > 1080) {
-        return;
-    }
-    
-    // Randomly select an event type
-    const eventTypes = ['work', 'personal', 'health', 'education', 'social', 'default'];
-    const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-    
-    // Create event block
-    const eventBlock = document.createElement('div');
-    eventBlock.className = `event-block ${randomType}`;
-    eventBlock.style.position = 'absolute';
-    eventBlock.style.top = `${Math.max(0, startPosition)}px`;
-    eventBlock.style.height = `${duration}px`;
-    eventBlock.style.left = '0';
-    eventBlock.style.right = '0';
-    eventBlock.style.margin = '0 4px';
-    
-    // Store start time in dataset
-    eventBlock.dataset.startTime = startTime;
-    eventBlock.dataset.name = name;
-    
-    eventBlock.innerHTML = `
-        <strong>${name}</strong>
-        ${description ? `<br><small>${description}</small>` : ''}
-    `;
-    
-    // Add click handler
-    eventBlock.addEventListener('click', () => showEventDetails({...event, type: randomType}));
-    
-    // Add to timeline
-    const scheduleItems = document.querySelector('.schedule-items');
-    if (scheduleItems) {
-        scheduleItems.appendChild(eventBlock);
     }
 }
 
@@ -390,27 +436,47 @@ async function checkForReminders() {
             const eventName = event.querySelector('strong').textContent;
             
             try {
+                // Get the current theme and corresponding prompt
+                const currentTheme = getCurrentTheme();
+                const promptGenerator = themePrompts[currentTheme] || themePrompts.disciplined;
+                
+                console.log(promptGenerator(eventName));
                 // Get AI-generated acknowledgment message
-                const response = await fetch('http://localhost:8000/api/openai', {
-                    method: 'POST',
-                    headers: {
+                const response = await fetch('http://localhost:8000/api/ackl', {
+        method: 'POST',
+        headers: {
                         'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Generate a creative acknowledgment message with a positive tone for the event "${eventName}" for a user to say aloud. The message should be unique and specific to this event.`
-                    })
-                });
+        },
+        body: JSON.stringify({
+                        message: promptGenerator(eventName)
+                    }),
+                    signal: AbortSignal.timeout(10000) // 10 second timeout
+    });
 
+    if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                console.log('Server response status:', response.status);
                 const data = await response.json();
+                console.log('Server response data:', data);
+                
                 let acknowledgmentMessage;
                 
-                if (data.response) {
+                if (data && data.response && typeof data.response === 'string' && data.response.trim()) {
                     // Extract the actual message from the AI response
                     // Remove any quotes or special formatting
                     acknowledgmentMessage = data.response.replace(/^["']|["']$/g, '').trim();
+                    console.log('Using AI-generated message:', acknowledgmentMessage);
                 } else {
-                    // Fallback message if no AI response
-                    acknowledgmentMessage = `I'm ready to begin ${eventName} and will give it my full attention!`;
+                    console.log('Invalid AI response, using fallback:', data);
+                    // Theme-specific fallback messages
+                    const fallbackMessages = {
+                        depressing: `I acknowledge my obligation to attend ${eventName}, and I will endure.`,
+                        motivational: `I'm super excited to begin ${eventName}! Let's make it amazing! 💪`,
+                        disciplined: `I'm ready to begin ${eventName} and will give it my full attention.`
+                    };
+                    acknowledgmentMessage = fallbackMessages[currentTheme] || fallbackMessages.disciplined;
                 }
                 
                 // Store the acknowledgment message
@@ -437,8 +503,14 @@ async function checkForReminders() {
                 
             } catch (error) {
                 console.error('Error getting acknowledgment message:', error);
-                // Use a fallback message if the API call fails
-                const fallbackMessage = `I'm ready to begin ${eventName} and will give it my full attention!`;
+                // Use a theme-specific fallback message if the API call fails
+                const currentTheme = getCurrentTheme();
+                const fallbackMessages = {
+                    depressing: `I acknowledge my obligation to attend ${eventName}, and I will endure.`,
+                    motivational: `I'm super excited to begin ${eventName}! Let's make it amazing! 💪`,
+                    disciplined: `I'm ready to begin ${eventName} and will give it my full attention.`
+                };
+                const fallbackMessage = fallbackMessages[currentTheme] || fallbackMessages.disciplined;
                 pendingAcknowledgments.set(eventName, fallbackMessage);
                 addMessageToNotifications(`
                     🔔 "${eventName}" is starting now!

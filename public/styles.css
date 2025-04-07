@@ -11,6 +11,36 @@
     --low-priority-color: #0b8043;
 }
 
+/* Depressing theme */
+[data-theme="depressing"] {
+    --primary-color: #37474f;
+    --hover-color: #263238;
+    --border-color: #455a64;
+    --text-color: #b0bec5;
+    --secondary-text: #78909c;
+    --background-color: #212121;
+}
+
+/* Motivational theme */
+[data-theme="motivational"] {
+    --primary-color: #ff6f00;
+    --hover-color: #fff3e0;
+    --border-color: #ffe0b2;
+    --text-color: #e65100;
+    --secondary-text: #f57c00;
+    --background-color: #fff8e1;
+}
+
+/* Disciplined theme */
+[data-theme="disciplined"] {
+    --primary-color: #1a73e8;
+    --hover-color: #f1f3f4;
+    --border-color: #dadce0;
+    --text-color: #202124;
+    --secondary-text: #5f6368;
+    --background-color: #fff;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -73,8 +103,12 @@ header {
 
 /* Schedule container */
 .schedule-container {
+    display: flex;
+    flex-direction: column;
     flex: 1;
-    padding: 20px;
+    background: white;
+    border-right: 1px solid var(--border-color);
+    overflow-x: hidden;
     overflow-y: auto;
 }
 
@@ -220,20 +254,10 @@ header {
     border: 1px solid var(--border-color);
     height: auto;
     min-height: fit-content;
-}
-
-.timeline-hours {
-    display: grid;
-    grid-template-rows: repeat(18, 60px);
-    background-color: var(--background-color);
-}
-
-.timeline-content {
-    display: grid;
-    grid-template-rows: repeat(18, 60px);
-    background-color: var(--background-color);
-    position: relative;
-    border-top: 1px solid var(--border-color);
+    flex: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
 }
 
 .time-column {
@@ -250,46 +274,65 @@ header {
     font-size: 12px;
     color: var(--secondary-text);
     border-bottom: 1px solid var(--border-color);
-    border-top: 1px solid var(--border-color);
     position: relative;
     flex-shrink: 0;
+}
+
+.time-slot:last-child {
+    border-bottom: none;
+    background-color: var(--background-color);
 }
 
 .schedule-items {
     position: relative;
     background-color: var(--background-color);
     border-left: 1px solid var(--border-color);
-    height: 1080px; /* 18 hours * 60px */
+    height: 1440px; /* 24 slots * 60px per slot */
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .event-slot {
     height: 60px;
-    background-color: var(--background-color);
     border-bottom: 1px solid var(--border-color);
-    border-top: 1px solid var(--border-color);
+    background-color: var(--background-color);
     position: relative;
-    flex-shrink: 0;
+}
+
+.event-slot:last-child {
+    border-bottom: none;
+    background-color: var(--background-color);
 }
 
 .event-block {
     position: absolute;
+    background-color: var(--primary-color);
+    color: white;
     padding: 8px;
     border-radius: 4px;
     font-size: 14px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    z-index: 1;
-    box-sizing: border-box;
     cursor: pointer;
     transition: all 0.2s ease;
-    border-left: 3px solid;
+    overflow: hidden;
+    z-index: 1;
+    max-width: calc(100% - 12px);
+    box-sizing: border-box;
 }
 
 .event-block:hover {
     transform: scale(1.02);
-    z-index: 2;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.event-block strong {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.event-block small {
+    opacity: 0.9;
+    font-size: 12px;
 }
 
 /* Work/Professional Events */
@@ -332,15 +375,6 @@ header {
     background-color: rgba(63, 81, 181, 0.1);
     border-left-color: #3f51b5;
     color: #3f51b5;
-}
-
-.event-block strong {
-    display: block;
-    margin-bottom: 4px;
-}
-
-.event-block small {
-    opacity: 0.8;
 }
 
 /* Calendar controls */
@@ -917,4 +951,110 @@ header {
     100% {
         transform: scale(1);
     }
+}
+
+/* Theme Selector */
+.theme-selector {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--background-color);
+}
+
+.theme-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-option:hover {
+    background-color: var(--hover-color);
+    transform: translateY(-2px);
+}
+
+.theme-option.active {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background-color: var(--hover-color);
+}
+
+.theme-option i {
+    font-size: 24px;
+    transition: all 0.2s ease;
+}
+
+.theme-option:hover i {
+    transform: scale(1.1);
+}
+
+.theme-option.active i {
+    color: var(--primary-color);
+}
+
+.theme-option span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Apply theme colors to existing elements */
+body[data-theme] {
+    color: var(--text-color);
+    background-color: var(--background-color);
+}
+
+[data-theme] .timeline {
+    background-color: var(--border-color);
+    border-color: var(--border-color);
+}
+
+[data-theme] .time-slot {
+    background-color: var(--background-color);
+    color: var(--secondary-text);
+    border-color: var(--border-color);
+}
+
+[data-theme] .schedule-items {
+    background-color: var(--background-color);
+    border-color: var(--border-color);
+}
+
+[data-theme] .event-block {
+    border-color: var(--primary-color);
+}
+
+[data-theme] .chat-input input {
+    color: var(--text-color);
+    background-color: var(--background-color);
+    border-color: var(--border-color);
+}
+
+[data-theme] .send-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+[data-theme] .message.ai-message {
+    background-color: var(--hover-color);
+    color: var(--text-color);
+}
+
+/* Schedule container */
+.schedule-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background: white;
+    border-right: 1px solid var(--border-color);
+    overflow-x: hidden;
+    overflow-y: auto;
 } 
