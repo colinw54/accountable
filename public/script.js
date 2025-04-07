@@ -4,6 +4,7 @@ const scheduleItems = document.querySelector('.schedule-items');
 const schedulerInput = document.querySelector('.scheduler-assistant input');
 const schedulerSendButton = document.querySelector('.scheduler-assistant .send-btn');
 const schedulerMessages = document.querySelector('.scheduler-messages');
+const schedulerVoiceButton = document.querySelector('.scheduler-assistant .voice-chat-btn');
 const notificationMessages = document.querySelector('.notification-messages');
 const notificationInput = document.querySelector('.notification-assistant .chat-input input');
 const notificationSendButton = document.querySelector('.notification-assistant .send-btn');
@@ -21,16 +22,99 @@ const modalPriority = document.getElementById('modalPriority');
 const closeButton = document.querySelector('.close');
 
 // Voice chat functionality
-let recognition = null;
+let schedulerRecognition = null;
+let notificationRecognition = null;
+
 if ('webkitSpeechRecognition' in window) {
-    recognition = new webkitSpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    // Initialize scheduler recognition
+    schedulerRecognition = new webkitSpeechRecognition();
+    schedulerRecognition.continuous = false;
+    schedulerRecognition.interimResults = false;
+    schedulerRecognition.lang = 'en-US';
+
+    // Initialize notification recognition
+    notificationRecognition = new webkitSpeechRecognition();
+    notificationRecognition.continuous = false;
+    notificationRecognition.interimResults = false;
+    notificationRecognition.lang = 'en-US';
 }
 
-const voiceChatBtn = document.querySelector('.voice-chat-btn');
-const chatInput = document.querySelector('.chat-input input');
+// Voice recognition handlers for scheduler
+function toggleSchedulerVoiceChat() {
+    if (schedulerRecognition.started) {
+        stopSchedulerVoiceChat();
+    } else {
+        startSchedulerVoiceChat();
+    }
+}
+
+function startSchedulerVoiceChat() {
+    schedulerRecognition.start();
+    schedulerVoiceButton.classList.add('active');
+    schedulerVoiceButton.title = 'Stop voice chat';
+}
+
+function stopSchedulerVoiceChat() {
+    schedulerRecognition.stop();
+    schedulerVoiceButton.classList.remove('active');
+    schedulerVoiceButton.title = 'Start voice chat';
+}
+
+// Voice recognition handlers for notifications
+function toggleNotificationVoiceChat() {
+    if (notificationRecognition.started) {
+        stopNotificationVoiceChat();
+    } else {
+        startNotificationVoiceChat();
+    }
+}
+
+function startNotificationVoiceChat() {
+    notificationRecognition.start();
+    notificationVoiceButton.classList.add('active');
+    notificationVoiceButton.title = 'Stop voice chat';
+}
+
+function stopNotificationVoiceChat() {
+    notificationRecognition.stop();
+    notificationVoiceButton.classList.remove('active');
+    notificationVoiceButton.title = 'Start voice chat';
+}
+
+// Set up recognition handlers
+schedulerRecognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    schedulerInput.value = transcript;
+    stopSchedulerVoiceChat();
+    // Automatically send the message
+    handleUserMessage(transcript);
+};
+
+schedulerRecognition.onend = () => {
+    stopSchedulerVoiceChat();
+};
+
+schedulerRecognition.onerror = (event) => {
+    console.error('Scheduler speech recognition error:', event.error);
+    stopSchedulerVoiceChat();
+};
+
+notificationRecognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    notificationInput.value = transcript;
+    stopNotificationVoiceChat();
+    // Automatically handle the acknowledgment
+    handleNotificationAcknowledgment(transcript);
+};
+
+notificationRecognition.onend = () => {
+    stopNotificationVoiceChat();
+};
+
+notificationRecognition.onerror = (event) => {
+    console.error('Notification speech recognition error:', event.error);
+    stopNotificationVoiceChat();
+};
 
 // Keep track of pending acknowledgments
 let pendingAcknowledgments = new Map();
@@ -97,8 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupModalListeners();
     setupTabListeners();
-    if (voiceChatBtn && recognition) {
-        voiceChatBtn.addEventListener('click', toggleVoiceChat);
+    if (schedulerVoiceButton && schedulerRecognition) {
+        schedulerVoiceButton.addEventListener('click', toggleSchedulerVoiceChat);
     }
     startReminderChecks();
     initializeThemes();
@@ -279,14 +363,7 @@ function showEventDetails(event) {
 
 // Setup event listeners
 function setupEventListeners() {
-    schedulerSendButton.addEventListener('click', () => {
-        const message = schedulerInput.value.trim();
-        if (message) {
-            handleUserMessage(message);
-            schedulerInput.value = '';
-        }
-    });
-
+    // Scheduler input handlers
     schedulerInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             const message = schedulerInput.value.trim();
@@ -297,30 +374,40 @@ function setupEventListeners() {
         }
     });
 
-    // New notification listeners
-    if (notificationSendButton && notificationInput) {
-        notificationSendButton.addEventListener('click', () => {
+    schedulerSendButton.addEventListener('click', () => {
+        const message = schedulerInput.value.trim();
+        if (message) {
+            handleUserMessage(message);
+            schedulerInput.value = '';
+        }
+    });
+
+    // Notification input handlers
+    notificationInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
             const message = notificationInput.value.trim();
             if (message) {
                 handleNotificationAcknowledgment(message);
                 notificationInput.value = '';
             }
-        });
+        }
+    });
 
-        notificationInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                const message = notificationInput.value.trim();
-                if (message) {
-                    handleNotificationAcknowledgment(message);
-                    notificationInput.value = '';
-                }
-            }
-        });
+    notificationSendButton.addEventListener('click', () => {
+        const message = notificationInput.value.trim();
+        if (message) {
+            handleNotificationAcknowledgment(message);
+            notificationInput.value = '';
+        }
+    });
+
+    // Voice recognition for scheduler
+    if (schedulerVoiceButton && schedulerRecognition) {
+        schedulerVoiceButton.addEventListener('click', toggleSchedulerVoiceChat);
     }
 
     // Voice recognition for notifications
-    if (notificationVoiceButton && recognition) {
+    if (notificationVoiceButton && notificationRecognition) {
         notificationVoiceButton.addEventListener('click', toggleNotificationVoiceChat);
     }
 }
@@ -364,41 +451,6 @@ async function handleUserMessage(message) {
         addMessageToScheduler(`Sorry, I couldn't process your request: ${error.message}`);
     }
 }
-
-function toggleVoiceChat() {
-    if (recognition.started) {
-        stopVoiceChat();
-    } else {
-        startVoiceChat();
-    }
-}
-
-function startVoiceChat() {
-    recognition.start();
-    voiceChatBtn.classList.add('active');
-    voiceChatBtn.title = 'Stop voice chat';
-}
-
-function stopVoiceChat() {
-    recognition.stop();
-    voiceChatBtn.classList.remove('active');
-    voiceChatBtn.title = 'Start voice chat';
-}
-
-recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    chatInput.value = transcript;
-    stopVoiceChat();
-};
-
-recognition.onend = () => {
-    stopVoiceChat();
-};
-
-recognition.onerror = (event) => {
-    console.error('Speech recognition error:', event.error);
-    stopVoiceChat();
-};
 
 // Function to calculate milliseconds until next minute
 function getMillisecondsUntilNextMinute() {
@@ -646,43 +698,4 @@ function handleNotificationAcknowledgment(message) {
     `;
     notificationMessages.appendChild(errorMessage);
     notificationMessages.scrollTop = notificationMessages.scrollHeight;
-}
-
-// Toggle voice chat for notifications
-function toggleNotificationVoiceChat() {
-    if (recognition.started) {
-        stopNotificationVoiceChat();
-    } else {
-        startNotificationVoiceChat();
-    }
-}
-
-function startNotificationVoiceChat() {
-    recognition.start();
-    notificationVoiceButton.classList.add('active');
-    notificationInput.placeholder = 'Listening...';
-}
-
-function stopNotificationVoiceChat() {
-    recognition.stop();
-    notificationVoiceButton.classList.remove('active');
-    notificationInput.placeholder = 'Type your acknowledgment...';
-}
-
-// Update recognition handlers
-recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    notificationInput.value = transcript;
-    handleNotificationAcknowledgment(transcript);
-    stopNotificationVoiceChat();
-};
-
-recognition.onend = () => {
-    stopNotificationVoiceChat();
-};
-
-recognition.onerror = (event) => {
-    console.error('Speech recognition error:', event.error);
-    stopNotificationVoiceChat();
-    addMessageToNotifications('❌ Voice input error. Please try again or use text input.');
-}; 
+} 
